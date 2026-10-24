@@ -24,7 +24,13 @@ def project(tmp_path):
     return root
 
 
-EXPECTED_SKILLS = ["decision-log", "explain-results", "lab-adopt", "result-graphs"]
+EXPECTED_SKILLS = [
+    "decision-log",
+    "explain-results",
+    "lab-adopt",
+    "research-direction",
+    "result-graphs",
+]
 
 
 def test_init_on_empty_project_creates_everything(project):
