@@ -6,6 +6,7 @@
 - **可視化**: `plotly` を使い、`lab_kit.viz.apply_jp_font` / `save_figure` で日本語が文字化けしないようにする。図の PNG は `results/<実験名>/figures/` に置く。
 - **キャッシュ**: 同じ計算を繰り返す関数には `functools.lru_cache` を使う。
 - **デバイス**: `from lab_kit import get_device` で MPS > CUDA > CPU を自動選択する。
+- **ノートブック**: marimo(`.py`)で書き、`.ipynb` は新しく作らない。書き方は marimo 公式の `marimo-notebook` Skill に従う。既存の `.ipynb` は `uv run lab-kit to-marimo` で変換する。
 - **フォルダ構成**: データは `data/{raw,interim,processed}/`、実験の成果物(図・表)は `results/<実験名>/`、ノートブックは `notebooks/`(marimo の `.py`)、再利用するコードは `src/`、重い処理は `scripts/`。`temp/` は作らない。図を `data/` と `results/` の両方に置かない。
 - **既存の関数を更新するとき**は、名前を変えずに出力する。
 - **決定の記録**: 方針・設定・データ・評価・手法を決めたら、`decision-log` Skill で issue に、背景・根拠・検討した代替案とともに残す。コミットメッセージには `Refs #N` で issue を参照する。

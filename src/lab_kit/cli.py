@@ -25,7 +25,12 @@ def _cmd_init(args) -> int:
         print("次の手順:")
         print("  1. uv run lab-kit doctor     # 環境の確認")
         print("  2. uv run lab-kit labels     # GitHub にラベルを作る(gh のログインが必要)")
-        print("  3. 既存コードの移行は、Claude に「lab-adopt で移行して」と頼む")
+        print(
+            "  3. npx skills add marimo-team/skills --agent claude-code --skill jupyter-to-marimo --skill marimo-notebook"
+        )
+        print("     (marimo 公式の Skill。node が必要)")
+        print("  4. uv run lab-kit to-marimo --dry-run   # 既存の .ipynb を marimo に変換する")
+        print("  5. 既存コードの移行は、Claude に「lab-adopt で移行して」と頼む")
     return 0
 
 
@@ -55,6 +60,17 @@ def _cmd_doctor(args) -> int:
     from lab_kit import doctor
 
     return doctor.run(Path(args.dir).resolve())
+
+
+def _cmd_to_marimo(args) -> int:
+    from lab_kit import convert
+
+    return convert.run(
+        Path(args.dir).resolve(),
+        paths=args.paths or None,
+        dry_run=args.dry_run,
+        check=not args.no_check,
+    )
 
 
 def _cmd_lineage(args) -> int:
@@ -106,6 +122,19 @@ def build_parser() -> argparse.ArgumentParser:
     p_doctor = sub.add_parser("doctor", help="環境を確認する")
     add_dir(p_doctor)
     p_doctor.set_defaults(func=_cmd_doctor)
+
+    p_marimo = sub.add_parser(
+        "to-marimo", help="既存の .ipynb を marimo(.py)に一括変換する(元の .ipynb は残す)"
+    )
+    p_marimo.add_argument(
+        "paths", nargs="*", help="対象のファイル・フォルダ(既定: プロジェクト全体)"
+    )
+    add_dir(p_marimo)
+    p_marimo.add_argument("--dry-run", action="store_true", help="何もせず、予定だけ表示する")
+    p_marimo.add_argument(
+        "--no-check", action="store_true", help="変換後の `marimo check` を行わない"
+    )
+    p_marimo.set_defaults(func=_cmd_to_marimo)
 
     p_lineage = sub.add_parser("lineage", help="*_metadata.yaml からデータの系譜図(Mermaid)を作る")
     p_lineage.add_argument(

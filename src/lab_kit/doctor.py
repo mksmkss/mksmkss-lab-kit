@@ -86,6 +86,22 @@ def check(root) -> list:
             (WARN, "Skill", "decision-log がありません。`uv run lab-kit init` で入ります")
         )
 
+    # marimo 公式の Skill
+    official = ("marimo-notebook", "jupyter-to-marimo")
+    missing = [n for n in official if not (root / ".claude" / "skills" / n / "SKILL.md").exists()]
+    if not missing:
+        results.append((OK, "marimo 公式 Skill", "入っています"))
+    else:
+        results.append(
+            (
+                WARN,
+                "marimo 公式 Skill",
+                f"{', '.join(missing)} がありません。"
+                "`npx skills add marimo-team/skills --agent claude-code "
+                "--skill jupyter-to-marimo --skill marimo-notebook` で入ります(node が必要)",
+            )
+        )
+
     # 任意
     if importlib.util.find_spec("kaleido"):
         results.append((OK, "kaleido", "図を PNG で保存できます"))
