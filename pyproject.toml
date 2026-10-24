@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lab-kit"
+version = "0.1.0"
+description = "研究用の共通道具(メタ情報付き保存・系譜の可視化・日本語対応plotly)と、decision-log などの Skill を既存リポジトリに入れる"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "pandas",
+    "plotly",
+    "python-dotenv",
+    "pyyaml",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+viz = ["kaleido"]
+ml = ["scikit-learn"]
+torch = ["torch"]
+marimo = ["marimo"]
+
+[project.scripts]
+lab-kit = "lab_kit.cli:main"
+
+[dependency-groups]
+dev = ["pytest", "ruff", "kaleido", "scikit-learn", "pyarrow"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lab_kit"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+extend-exclude = ["src/lab_kit/scaffold"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]

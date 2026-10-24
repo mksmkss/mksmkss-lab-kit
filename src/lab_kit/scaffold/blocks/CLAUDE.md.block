@@ -1,0 +1,13 @@
+## lab-kit の運用ルール
+
+- **パス**: コードに絶対パスを直書きしない。`from lab_kit import project_root, data_path, results_path` を使う(`sys.path.append` は不要)。
+- **データの保存**: データを生成するときは、必ず `from lab_kit import save_data_with_metadata` を使い、`created_by`、`source_info`(元データ)、`processing_steps`、`config` を書く。メタ情報(`*_metadata.yaml`)だけを git に入れ、データ本体は入れない。
+- **ループ**: `for` などの繰り返し処理には `tqdm` を使う。
+- **可視化**: `plotly` を使い、`lab_kit.viz.apply_jp_font` / `save_figure` で日本語が文字化けしないようにする。図の PNG は `results/<実験名>/figures/` に置く。
+- **キャッシュ**: 同じ計算を繰り返す関数には `functools.lru_cache` を使う。
+- **デバイス**: `from lab_kit import get_device` で MPS > CUDA > CPU を自動選択する。
+- **フォルダ構成**: データは `data/{raw,interim,processed}/`、実験の成果物(図・表)は `results/<実験名>/`、ノートブックは `notebooks/`(marimo の `.py`)、再利用するコードは `src/`、重い処理は `scripts/`。`temp/` は作らない。図を `data/` と `results/` の両方に置かない。
+- **既存の関数を更新するとき**は、名前を変えずに出力する。
+- **決定の記録**: 方針・設定・データ・評価・手法を決めたら、`decision-log` Skill で issue に、背景・根拠・検討した代替案とともに残す。コミットメッセージには `Refs #N` で issue を参照する。
+- **結果の説明**は `explain-results` Skill の型(何をしたくて → 計算 → 値 → 意味)で、**結果の報告**は `result-graphs` Skill で図にして残す。
+- **既存コードを移行するとき**は `lab-adopt` Skill を使う。

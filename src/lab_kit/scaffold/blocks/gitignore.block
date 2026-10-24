@@ -1,0 +1,23 @@
+# データ本体は git に入れず、メタ情報だけを追跡する
+data/**
+!data/**/
+!data/**/*_metadata.yaml
+!data/**/*_metadata.yml
+!data/**/*_metadata.json
+!data/**/.gitkeep
+
+# 大きなバイナリ(どこに置いても追跡しない。メタ情報は追跡される)
+*.db
+*.npy
+*.npz
+*.pt
+*.pth
+*.joblib
+*.h5
+!**/*_metadata.yaml
+
+# 環境・生成物
+.env
+.venv/
+__pycache__/
+__marimo__/
