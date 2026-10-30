@@ -25,6 +25,16 @@ description: Use whenever an experiment or diagnostic produces results to report
 - 題に、条件(手法、何 seed、何件)を書く。基準線(従来の値、下限など)を入れる。ばらつきがあれば、seed ごとの細線や ±1 std の帯を入れる。
 - 保存先は `results/<実験名>/figures/`。HTML は確認用で、`.gitignore` 対象。
 - 図の元になったデータ(CSV など)は `save_data_with_metadata` で、メタ情報と一緒に保存する。
+- **色弱でも区別できるようにする。** 赤と緑を組み合わせない。配色は Okabe-Ito(青 `#0072B2`、朱 `#D55E00`、黄 `#F0E442`、空色 `#56B4E9`、緑青 `#009E73`、濃い灰、薄い灰)から選ぶ。色だけに頼らず、棒には模様(`marker_pattern_shape` の `/`、`x` など)、折れ線には線種・記号を付ける。対になる意味(当たりと誤り)は、明るさも変える。
+- **グラフの前に見方を書く。** 何を示すか、軸が何か、色・模様・線がそれぞれ何か、どこを見ればよいか。marimo では `mo.vstack([mo.md(見方), fig])` にする。見方のないグラフは出さない。
+
+## 実例を見るノートブック(marimo)
+数値だけでなく、1件ずつの実例を見たいときに作る(`research-direction` の「数値だけで終わらせない」)。
+- 選ぶ(ドロップダウン)→ 1件の詳細(グラフ + 本文)の流れにする。
+- 1件の詳細は、その件の全候補のスコアの棒に、しきい値を重ねる。正しく付いたもの・誤って付いたもの・見逃しを、色と模様で分ける。
+- 選んだ種類で常に同じ値になる行(例: 「見逃し」を選んだときの「正解に含まれる」)は出さない。見出し1文に、その件がどういう件かを書く。
+- 「いま見ている」「判定」のような、誰が何をするのか分からない言葉を使わない。
+- 起動は `marimo run --watch <file> --no-token --port 2718` を、作ったときに1回だけ。直すたびに再起動しない(`--watch` で反映される)。エラーがないかは `marimo export html` で確かめる。
 
 ## 残す前に必ず確認する
 - 作った PNG を `Read` で開いて、目で確認する。よくある不具合: 不要な注釈、x軸の範囲が広すぎる、第2軸が分かれていない、凡例・題が切れている、日本語が □ になっている。直してから残す。
@@ -35,6 +45,7 @@ description: Use whenever an experiment or diagnostic produces results to report
 2. issue のコメントには、**commit sha 固定**の URL で貼る。
    `![題](https://github.com/<owner>/<repo>/blob/<commit sha>/<PNGのパス>?raw=true)`
    `<owner>/<repo>` は `gh repo view --json nameWithOwner --jq .nameWithOwner` で取得する。
+   **`HEAD` やブランチ名を URL に使わない。** `HEAD` は既定ブランチを指すので、作業ブランチにしかない PNG は表示されない。完全な sha は `git rev-parse <commit>` で取る。
 3. 図の直下に、図の読み方を1行(細線・太線・破線が何か)書く。表も併記する。
 4. 結果の説明は `explain-results` の型、決定の記録は `decision-log` の型に従う。
 5. 投稿後、画像が表示されるかをユーザーに確認してもらう。

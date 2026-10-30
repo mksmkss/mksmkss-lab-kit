@@ -56,11 +56,12 @@ Claude Code に「この種類の作業は、こうやって進める」と教�
 
 | 種類 | 名前 | 内容 |
 |---|---|---|
-| Skill | `decision-log` | 1テーマ = 1 issue。本文に現状、コメントに決定の記録(D1, D2…)。先生との相談の記録にも使う |
+| Skill | `decision-log` | 1テーマ = 1 issue。本文に現時点のまとめ(決まった型)、コメントに決定の記録(D1, D2…)。先生との相談の記録にも使う |
 | Skill | `explain-results` | 結果の説明の型(何をしたくて → 計算 → 値 → 意味) |
 | Skill | `result-graphs` | 結果を plotly の図にして残す |
 | Skill | `research-direction` | 次に何を試すかを、数値の根拠から決める進め方。目的と比較の基準は、各人の `docs/research-direction.md` に書く(無ければ質問して作る) |
 | Skill | `lab-adopt` | 既存コードを調べ、移行案を出し、承認された分だけ書き換える |
+| フック | `summary_guard` | issue にコメントしたら、本文のまとめを直すまで Claude のターンを終わらせない(`.claude/settings.json` に登録) |
 | Python | `lab_kit` | メタ情報つき保存・読込・系譜、`project_root` / `data_path` / `results_path`、`get_device`、`lab_kit.viz`(日本語フォント、PNG 保存) |
 | コマンド | `lab-kit` | `init` `update` `labels` `doctor` `to-marimo` `lineage` |
 | 雛形 | — | `CLAUDE.md` と `.gitignore` のブロック、`.env.example`、marimo テンプレート、`data/` `results/` |

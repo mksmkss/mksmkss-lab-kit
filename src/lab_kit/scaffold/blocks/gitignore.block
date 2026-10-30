@@ -21,3 +21,4 @@ data/**
 .venv/
 __pycache__/
 __marimo__/
+.claude/summary-pending.json

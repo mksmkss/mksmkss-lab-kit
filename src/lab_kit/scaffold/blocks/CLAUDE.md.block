@@ -9,7 +9,7 @@
 - **ノートブック**: marimo(`.py`)で書き、`.ipynb` は新しく作らない。書き方は marimo 公式の `marimo-notebook` Skill に従う。既存の `.ipynb` は `uv run lab-kit to-marimo` で変換する。
 - **フォルダ構成**: データは `data/{raw,interim,processed}/`、実験の成果物(図・表)は `results/<実験名>/`、ノートブックは `notebooks/`(marimo の `.py`)、再利用するコードは `src/`、重い処理は `scripts/`。`temp/` は作らない。図を `data/` と `results/` の両方に置かない。
 - **既存の関数を更新するとき**は、名前を変えずに出力する。
-- **決定の記録**: 方針・設定・データ・評価・手法を決めたら、`decision-log` Skill で issue に、背景・根拠・検討した代替案とともに残す。コミットメッセージには `Refs #N` で issue を参照する。
+- **決定の記録**: 方針・設定・データ・評価・手法を決めたら、`decision-log` Skill で issue に、背景・根拠・検討した代替案とともに残す。コミットメッセージには `Refs #N` で issue を参照する。 コメントを足したら、本文の「現時点のまとめ」を必ず書き直す(フックが確認する)。
 - **結果の説明**は `explain-results` Skill の型(何をしたくて → 計算 → 値 → 意味)で、**結果の報告**は `result-graphs` Skill で図にして残す。
 - **研究の目的と比較の基準**は `docs/research-direction.md` に書く(無ければ `research-direction` Skill が作る手伝いをする)。次に何を試すかを決めるときは、そこに従う。
 - **既存コードを移行するとき**は `lab-adopt` Skill を使う。
