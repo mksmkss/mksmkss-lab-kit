@@ -1,4 +1,5 @@
 import hashlib
+import json
 import shutil
 import subprocess
 from pathlib import Path
@@ -192,3 +193,59 @@ def test_unbalanced_marker_is_reported_not_touched(project):
     report = scaffold.run(project, mode="init")
     assert (project / ".gitignore").read_text(encoding="utf-8") == "# lab-kit:begin\nfoo\n"
     assert report.count("warn") == 1
+
+
+def _settings(project):
+    return json.loads((project / ".claude" / "settings.json").read_text(encoding="utf-8"))
+
+
+def test_init_registers_summary_hook(project):
+    scaffold.run(project, mode="init")
+    assert (project / ".claude" / "hooks" / "summary_guard.py").exists()
+    hooks = _settings(project)["hooks"]
+    for event in ("PostToolUse", "Stop", "SessionStart"):
+        assert any(scaffold.HOOK_MARK in json.dumps(e) for e in hooks[event])
+
+
+def test_init_keeps_existing_settings(project):
+    own = {
+        "permissions": {"allow": ["Bash(ls:*)"]},
+        "hooks": {"Stop": [{"hooks": [{"type": "command", "command": "echo mine"}]}]},
+    }
+    (project / ".claude").mkdir()
+    (project / ".claude" / "settings.json").write_text(json.dumps(own), encoding="utf-8")
+
+    scaffold.run(project, mode="init")
+    settings = _settings(project)
+    assert settings["permissions"] == own["permissions"]
+    assert settings["hooks"]["Stop"][0] == own["hooks"]["Stop"][0]
+    assert len(settings["hooks"]["Stop"]) == 2
+
+    before = tree_hashes(project)
+    report = scaffold.run(project, mode="init")
+    assert tree_hashes(project) == before
+    assert report.count("hooks-add") == 0
+
+
+def test_update_replaces_only_our_hook_entry(project):
+    scaffold.run(project, mode="init")
+    settings = _settings(project)
+    settings["hooks"]["Stop"][0]["hooks"][0]["timeout"] = 5  # 古い版の項目を模す
+    settings["hooks"]["Stop"].append({"hooks": [{"type": "command", "command": "echo mine"}]})
+    (project / ".claude" / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    scaffold.run(project, mode="init")
+    assert _settings(project)["hooks"]["Stop"][0]["hooks"][0].get("timeout") == 5
+
+    scaffold.run(project, mode="update")
+    stop_entries = _settings(project)["hooks"]["Stop"]
+    assert stop_entries[0] == scaffold._hook_entry("Stop")
+    assert stop_entries[1]["hooks"][0]["command"] == "echo mine"
+
+
+def test_broken_settings_is_not_touched(project):
+    (project / ".claude").mkdir()
+    (project / ".claude" / "settings.json").write_text("{not json", encoding="utf-8")
+    report = scaffold.run(project, mode="init")
+    assert (project / ".claude" / "settings.json").read_text(encoding="utf-8") == "{not json"
+    assert any(a == "warn" and "settings.json" in p for a, p, _ in report.entries)

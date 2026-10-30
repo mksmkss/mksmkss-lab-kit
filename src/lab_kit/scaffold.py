@@ -6,6 +6,7 @@
 - 同じ内容のファイルは何もしない。
 - 内容が違うファイルは上書きせず、横に `*.lab-kit.new` を置いて差分を見せる。
 - `.gitignore` と `CLAUDE.md` は、`lab-kit:begin` 〜 `lab-kit:end` の管理ブロックだけを追記・更新する。
+- `.claude/settings.json` は、lab-kit のフックの項目だけを足す・更新する。他の設定には触らない。
 - `update` は、前回配ったときから変更されていないファイルだけを更新する。
 """
 
@@ -34,6 +35,16 @@ SINGLE_FILES = {
     "notebooks/_template.py": "notebook_template.py",
 }
 
+# `.claude/settings.json` に登録するフック。command に HOOK_MARK を含むものを lab-kit の項目とみなす
+HOOK_MARK = ".claude/hooks/summary_guard.py"
+HOOK_COMMAND = 'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/summary_guard.py"'
+HOOK_EVENTS = {
+    "PostToolUse": "Bash|mcp__.*github.*",
+    "Stop": None,
+    "SessionStart": None,
+}
+SETTINGS_PATH = Path(".claude") / "settings.json"
+
 # 空フォルダを git に残すための .gitkeep
 KEEP_DIRS = ["data/raw", "data/interim", "data/processed", "results"]
 
@@ -60,6 +71,9 @@ class Report:
             "block-update": "ブロック更新",
             "block-skip": "ブロック変更なし",
             "link": "リンク作成",
+            "hooks-add": "フック追加",
+            "hooks-update": "フック更新",
+            "hooks-skip": "フック変更なし",
             "warn": "注意",
         }
         prefix = "[dry-run] " if dry_run else ""
@@ -83,6 +97,10 @@ def _scaffold_files() -> dict:
         if src.is_file() and "__pycache__" not in src.parts:
             rel = src.relative_to(skills_dir).as_posix()
             files[f".claude/skills/{rel}"] = src.read_bytes()
+
+    hooks_dir = SCAFFOLD_DIR / "hooks"
+    for src in sorted(hooks_dir.glob("*.py")):
+        files[f".claude/hooks/{src.name}"] = src.read_bytes()
 
     for directory in KEEP_DIRS:
         files[f"{directory}/.gitkeep"] = b""
@@ -219,6 +237,69 @@ def _sync_blocks(root: Path, mode: str, dry_run: bool, report: Report):
             report.add("block-skip", dest, "(既にブロックがあります。更新は `lab-kit update`)")
 
 
+def _hook_entry(event: str) -> dict:
+    entry = {"hooks": [{"type": "command", "command": HOOK_COMMAND}]}
+    matcher = HOOK_EVENTS[event]
+    if matcher:
+        entry = {"matcher": matcher, **entry}
+    return entry
+
+
+def _is_ours(entry) -> bool:
+    return isinstance(entry, dict) and any(
+        HOOK_MARK in str(h.get("command", "")) for h in entry.get("hooks", []) if isinstance(h, dict)
+    )
+
+
+def _sync_settings(root: Path, mode: str, dry_run: bool, report: Report):
+    """`.claude/settings.json` に、まとめの更新を確認するフックを登録する。"""
+    dest = SETTINGS_PATH.as_posix()
+    target = root / SETTINGS_PATH
+    if target.exists():
+        try:
+            settings = json.loads(target.read_text(encoding="utf-8") or "{}")
+        except json.JSONDecodeError:
+            report.add("warn", dest, "JSON として読めません。フックを登録できませんでした")
+            return
+        if not isinstance(settings, dict) or not isinstance(settings.get("hooks", {}), dict):
+            report.add("warn", dest, "想定と違う形です。フックを登録できませんでした")
+            return
+    else:
+        settings = {}
+
+    hooks = settings.setdefault("hooks", {})
+    added, updated, kept = [], [], []
+    for event in HOOK_EVENTS:
+        wanted = _hook_entry(event)
+        entries = hooks.setdefault(event, [])
+        if not isinstance(entries, list):
+            report.add("warn", dest, f"hooks.{event} が配列ではありません。手で直してください")
+            return
+        ours = [i for i, e in enumerate(entries) if _is_ours(e)]
+        if not ours:
+            entries.append(wanted)
+            added.append(event)
+        elif entries[ours[0]] == wanted:
+            kept.append(event)
+        elif mode == "update":
+            entries[ours[0]] = wanted
+            updated.append(event)
+        else:
+            kept.append(event)
+
+    if added or updated:
+        action = "hooks-update" if updated and not added else "hooks-add"
+        report.add(action, dest, ", ".join(added + updated))
+        if not dry_run:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(
+                json.dumps(settings, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+            )
+    else:
+        note = "" if mode == "update" else "(既にあります。更新は `lab-kit update`)"
+        report.add("hooks-skip", dest, note)
+
+
 def _link_agents(root: Path, dry_run: bool, report: Report):
     """.agents/skills/<name> から .claude/skills/<name> へのシンボリックリンクを作る。"""
     skills_dir = SCAFFOLD_DIR / "skills"
@@ -264,6 +345,7 @@ def run(root, mode: str = "init", dry_run: bool = False, agents: bool = False) -
     manifest_files: dict = {}
     _sync_files(root, mode, dry_run, report, manifest_files)
     _sync_blocks(root, mode, dry_run, report)
+    _sync_settings(root, mode, dry_run, report)
     if agents:
         _link_agents(root, dry_run, report)
 
