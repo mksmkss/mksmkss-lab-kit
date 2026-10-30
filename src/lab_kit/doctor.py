@@ -86,6 +86,30 @@ def check(root) -> list:
             (WARN, "Skill", "decision-log がありません。`uv run lab-kit init` で入ります")
         )
 
+    # まとめの更新を確認するフック
+    settings_path = root / ".claude" / "settings.json"
+    hook_file = root / ".claude" / "hooks" / "summary_guard.py"
+    registered = False
+    if settings_path.exists():
+        try:
+            hooks = json.loads(settings_path.read_text(encoding="utf-8")).get("hooks", {})
+            registered = all(
+                any("summary_guard.py" in json.dumps(e) for e in hooks.get(ev, []))
+                for ev in ("PostToolUse", "Stop", "SessionStart")
+            )
+        except (ValueError, AttributeError):
+            registered = False
+    if registered and hook_file.exists():
+        results.append((OK, "まとめのフック", "issue のまとめの更新を確認します"))
+    else:
+        results.append(
+            (
+                WARN,
+                "まとめのフック",
+                "未登録です。`uv run lab-kit update` で `.claude/settings.json` に登録されます",
+            )
+        )
+
     # marimo 公式の Skill
     official = ("marimo-notebook", "jupyter-to-marimo")
     missing = [n for n in official if not (root / ".claude" / "skills" / n / "SKILL.md").exists()]
